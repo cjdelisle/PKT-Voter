@@ -23,6 +23,9 @@ jobs:
         toolchain: stable
         target: x86_64-pc-windows-gnu
 
+    - name: Add mingw32 for Windows build
+      run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64
+
     - name: Build for Windows
       run: cargo build --target=x86_64-pc-windows-gnu --release
 
