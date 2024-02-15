@@ -131,57 +131,17 @@ jobs:
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
 
       - name: "List artifacts"
         run: "find ."
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-  
-      - name: Upload PKT-Voter_windows_amd64.exe
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: PKT-Voter_windows_amd64.exe
-          asset_name: PKT-Voter_windows_amd64.exe
-          asset_content_type: application/octet-stream
-
-      - name: Upload PKT-Voter_mac_amd64.tar.bz2
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: PKT-Voter_mac_amd64.tar.bz2
-          asset_name: PKT-Voter_mac_amd64.tar.bz2
-          asset_content_type: application/octet-stream
-  
-      - name: Upload PKT-Voter_mac_aarch64.tar.bz2
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: PKT-Voter_mac_aarch64.tar.bz2
-          asset_name: PKT-Voter_mac_aarch64.tar.bz2
-          asset_content_type: application/octet-stream
-
-      - name: Upload PKT-Voter_linux_amd64.tar.bz2
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: PKT-Voter_linux_amd64.tar.bz2
-          asset_name: PKT-Voter_linux_amd64.tar.bz2
-          asset_content_type: application/octet-stream
+          files: |
+            PKT-Voter_windows_amd64.exe
+            PKT-Voter_mac_amd64.tar.bz2
+            PKT-Voter_mac_aarch64.tar.bz2
+            PKT-Voter_linux_amd64.tar.bz2
