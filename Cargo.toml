@@ -1,5 +1,5 @@
 [package]
-name = "pkt-voter"
+name = "PKT-Voter"
 version = "0.1.0"
 authors = ["cjd@cjdns.fr"]
 edition = "2021"

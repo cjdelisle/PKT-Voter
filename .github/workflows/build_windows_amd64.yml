@@ -30,4 +30,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: my_app_binaries_windows_ubuntu
-        path: target/x86_64-pc-windows-gnu/release/
+        path: target/x86_64-pc-windows-gnu/release/PKT-Voter.exe
