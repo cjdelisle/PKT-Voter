@@ -11,7 +11,7 @@ on:
       - main
 
 env:
-  ARCHIVE=PKT-Voter_mac_amd64.tar.bz2
+  ARCHIVE: PKT-Voter_mac_amd64.tar.bz2
 
 jobs:
   build:

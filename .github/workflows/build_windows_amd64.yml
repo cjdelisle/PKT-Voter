@@ -9,7 +9,7 @@ on:
       - main
 
 env:
-  ARCHIVE=PKT-Voter_windows_amd64.exe
+  ARCHIVE: PKT-Voter_windows_amd64.exe
 
 jobs:
   build:
