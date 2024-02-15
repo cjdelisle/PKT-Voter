@@ -33,7 +33,7 @@ jobs:
       run: cargo build --target=x86_64-pc-windows-gnu --release
 
     - name: Create archive
-      run: cp ./target/x86_64-apple-darwin/release/PKT-Voter.exe ./$ARCHIVE
+      run: cp ./target/x86_64-pc-windows-gnu/release/PKT-Voter.exe ./$ARCHIVE
   
     - name: Archive built artifacts
       uses: actions/upload-artifact@v4
