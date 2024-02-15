@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+env:
+  ARCHIVE=PKT-Voter_windows_amd64.exe
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -29,8 +32,34 @@ jobs:
     - name: Build for Windows
       run: cargo build --target=x86_64-pc-windows-gnu --release
 
+    - name: Create archive
+      run: cp ./target/x86_64-apple-darwin/release/PKT-Voter.exe ./$ARCHIVE
+  
     - name: Archive built artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
-        name: my_app_binaries_windows_ubuntu
-        path: target/x86_64-pc-windows-gnu/release/PKT-Voter.exe
+        name: $ARCHIVE
+        path: $ARCHIVE
+  
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+  
+    - name: Upload Executable to Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: .
+        asset_name: $ARCHIVE
+        asset_content_type: application/octet-stream

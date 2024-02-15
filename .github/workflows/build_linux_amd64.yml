@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+env:
+  ARCHIVE=PKT-Voter_linux_amd64.tar.bz2
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,8 +28,34 @@ jobs:
     - name: Build
       run: cargo build --release
 
+    - name: Create archive
+      run: tar -cjf $ARCHIVE ./target/release ./PKT-Voter
+
     - name: Archive built artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
-        name: pkt_voter_linux_amd64
-        path: target/release/PKT-Voter
+        name: $ARCHIVE
+        path: $ARCHIVE
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Executable to Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: .
+        asset_name: $ARCHIVE
+        asset_content_type: application/octet-stream

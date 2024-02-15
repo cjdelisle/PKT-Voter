@@ -1,23 +1,21 @@
-name: Mac/aarch64
+name: Mac/amd64
 
 on:
   push:
     branches:
       - main
+    tags:
+      - '*'
   pull_request:
     branches:
       - main
 
 env:
-  ARCHIVE=PKT-Voter_mac_aarch64.tar.bz2
+  ARCHIVE=PKT-Voter_mac_amd64.tar.bz2
 
 jobs:
   build:
     runs-on: macos-latest
-
-    strategy:
-      matrix:
-        platform: [arm64]
 
     steps:
     - name: Checkout code
@@ -29,11 +27,11 @@ jobs:
         profile: minimal
         toolchain: stable
 
-    - name: Build
-      run: cargo build --release
+    - name: Build for macOS AMD64
+      run: cargo build --target=x86_64-apple-darwin --release
 
     - name: Create archive
-      run: tar -cjf $ARCHIVE ./target/release ./PKT-Voter
+      run: tar -cjf $ARCHIVE ./target/x86_64-apple-darwin/release ./PKT-Voter
 
     - name: Archive built artifacts
       uses: actions/upload-artifact@v4
