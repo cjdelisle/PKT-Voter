@@ -129,29 +129,8 @@ jobs:
       - build_linux_amd64
     steps:
 
-      - name: Download build_windows_amd64 Artifacts
+      - name: Download Artifacts
         uses: actions/download-artifact@v4
-        with:
-          name: build_windows_amd64
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Download build_mac_amd64 Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build_mac_amd64
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Download build_mac_aarch64 Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build_mac_aarch64
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Download build_mac_aarch64 Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build_linux_amd64
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "List artifacts"
         run: "find ."
