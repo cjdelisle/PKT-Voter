@@ -1,0 +1,35 @@
+name: Windows/amd64
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Install prerequisites for cross-compilation
+      run: sudo apt-get update && sudo apt-get install -y gcc-multilib
+
+    - name: Build for Windows
+      run: cargo build --target=x86_64-pc-windows-gnu --release
+
+    - name: Archive built artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: my_app_binaries_windows_ubuntu
+        path: target/x86_64-pc-windows-gnu/release/
