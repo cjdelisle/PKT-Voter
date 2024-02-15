@@ -1,0 +1,34 @@
+import { Form } from "form.slint";
+import { Confirm } from "confirm.slint";
+import { Sending } from "sending.slint";
+
+export component SlintApp inherits Window {
+    in property<int> window: 0;
+    title: "PKT Voter";
+
+    form := Form{ visible: window == 0; }
+    out property private_key <=> form.private_key;
+    in property vote_ok <=> form.vote_ok;
+    in property message <=> form.message;
+    in property address <=> form.address;
+    in property balance <=> form.balance;
+    out property vote_for <=> form.vote_for;
+    in-out property vote_for_nobody <=> form.vote_for_nobody;
+    out property is_candidate <=> form.is_candidate;
+    in property vote_for_ok <=> form.vote_for_ok;
+    callback compute_address <=> form.compute_address;
+    callback check_vote_for_address <=> form.check_vote_for_address;
+    callback compute_vote <=> form.compute_vote;
+
+    confirm := Confirm{ visible: window == 1; }
+    in property confirm_txn <=> confirm.txn;
+    callback confirm_ok <=> confirm.confirm_ok;
+    callback confirm_cancel <=> confirm.confirm_cancel;
+
+    sending := Sending{ visible: window == 2; }
+    in property sending <=> sending.sending;
+    callback sending_done <=> sending.sending_done;
+
+    min-width: 600px;
+    min-height: 650px;
+}

@@ -1,0 +1,70 @@
+import {
+    VerticalBox,
+    LineEdit,
+    Spinner,
+    GroupBox,
+    StandardButton, TextEdit
+} from "std-widgets.slint";
+
+struct UiSending {
+    state: int,
+    txid: string,
+    message: string,
+    error: string,
+}
+
+export component Sending inherits VerticalBox {
+    in property<UiSending> sending;
+    callback sending_done();
+
+    GroupBox {
+        visible: sending.state == 0;
+        title: @tr("Sending");
+        vertical-stretch: 0;
+        VerticalBox {
+            Spinner { indeterminate: true; }
+            LineEdit {
+                visible: sending.txid != "";
+                text: sending.txid;
+                read-only: true;
+            }
+            Text{ text: sending.message; }
+        }
+    }
+    GroupBox {
+        visible: sending.state == 1;
+        title: @tr("Success");
+        vertical-stretch: 0;
+        VerticalBox{
+            LineEdit {
+                text: sending.txid;
+                read-only: true;
+            }
+            Text{ text: sending.message; }
+            StandardButton{
+                kind: ok;
+                clicked => { sending_done(); }
+            }
+        }
+    }
+    GroupBox {
+        visible: sending.state == 2;
+        title: @tr("Error");
+        vertical-stretch: 0;
+        VerticalBox{
+            LineEdit {
+                text: sending.txid;
+                read-only: true;
+            }
+            Text{ text: sending.message; }
+            TextEdit {
+                text: sending.error;
+                read-only: true;
+            }
+            StandardButton{
+                kind: ok;
+                clicked => { sending_done(); }
+            }
+        }
+    }
+}

@@ -1,0 +1,75 @@
+import {
+    Button,
+    VerticalBox,
+    LineEdit,
+    HorizontalBox,
+    Spinner,
+    CheckBox,
+    GroupBox,
+    StandardButton
+} from "std-widgets.slint";
+
+export struct UiTxInput {
+    prev_txid: string,
+    prev_n: int,
+    address: string,
+    amount: float,
+}
+
+export struct UiTxOutput {
+    address: string,
+    amount: float,
+}
+
+export struct UiTransaction {
+    total_fees: float,
+    inputs: [UiTxInput],
+    outputs: [UiTxOutput],
+}
+
+export component Confirm inherits VerticalBox {
+    in property<UiTransaction> txn;
+    callback confirm_ok();
+    callback confirm_cancel();
+
+    GroupBox {
+        title: @tr("Meta info");
+        vertical-stretch: 0;
+        Text{ text: "Fees: \{txn.total_fees}"; }
+    }
+    GroupBox {
+        title: @tr("Funding sources");
+        vertical-stretch: 0;
+        VerticalBox{
+            for input in txn.inputs: VerticalBox {
+                Text{ text: "UTXO: \{input.prev_txid}:\{input.prev_n}"; }
+                Text{ text: "Addr: \{input.address}"; }
+                Text{ text: "Amt : \{input.amount}"; }
+            }
+        }
+    }
+    GroupBox {
+        title: @tr("Outputs");
+        vertical-stretch: 0;
+        VerticalBox{
+            for output in txn.outputs: VerticalBox {
+                Text{ text: "Addr: \{output.address}"; }
+                Text{ text: "Amt : \{output.amount}"; }
+            }
+        }
+    }
+    GroupBox {
+        title: @tr("Send this transaction?");
+        vertical-stretch: 0;
+        HorizontalBox {
+            StandardButton{
+                kind: no;
+                clicked => { confirm_cancel(); }
+            }
+            StandardButton{
+                kind: yes;
+                clicked => { confirm_ok(); }
+            }
+        }
+    }
+}

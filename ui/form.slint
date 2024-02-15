@@ -1,0 +1,89 @@
+import {
+    Button,
+    VerticalBox,
+    LineEdit,
+    HorizontalBox,
+    Spinner,
+    CheckBox,
+    GroupBox,
+    StandardButton
+} from "std-widgets.slint";
+
+export component Form inherits VerticalBox {
+    out property<string> private_key: "";
+    in property<bool> vote_ok: false;
+    in property<string> message: "Paste your private key to begin.";
+    in property<string> address: "";
+    in property<string> balance: "";
+
+    out property<string> vote_for: "";
+    in-out property<bool> vote_for_nobody: false;
+    out property<bool> is_candidate: false;
+    in property<bool> vote_for_ok: false;
+
+    callback compute_address();
+    callback check_vote_for_address();
+    callback compute_vote();
+
+    VerticalBox {
+        GroupBox {
+            title: @tr("Enter your private key");
+            vertical-stretch: 0;
+            VerticalBox{
+                LineEdit {
+                    placeholder-text: "Private key";
+                    text: private_key;
+                    input-type: password;
+                    edited => { private_key = self.text; }
+                    accepted => { root.compute_address(); }
+                }
+                Button {
+                    text: "Get address";
+                    clicked => { root.compute_address(); }
+                }
+                Text { visible: address != ""; text: address; }
+                Text { visible: address != ""; text: balance; }
+            }
+        }
+        GroupBox {
+            title: @tr("Create your vote");
+            vertical-stretch: 0;
+            VerticalBox {
+                LineEdit {
+                    enabled: vote_ok && !vote_for_nobody;
+                    placeholder-text: "Address to vote for";
+                    text: vote_for;
+                    edited => {
+                        vote_for = self.text;
+                        vote_for_nobody = false;
+                        root.check_vote_for_address();
+                    }
+                }
+                HorizontalBox {
+                    horizontal-stretch: 0;
+                    CheckBox {
+                        text: "Vote for nobody";
+                        toggled => {
+                            vote_for_nobody = self.checked;
+                            root.check_vote_for_address();
+                        }
+                    }
+                    CheckBox {
+                        enabled: vote_ok;
+                        text: "Become candidate";
+                        toggled => {
+                            is_candidate = self.checked;
+                            root.check_vote_for_address();
+                        }
+                    }
+                }
+                Button {
+                    text: "Review vote transaction";
+                    enabled: vote_ok && vote_for_ok;
+                    clicked => { root.compute_vote(); }
+                }
+            }
+        }
+        Text { text: message; }
+    }
+}
