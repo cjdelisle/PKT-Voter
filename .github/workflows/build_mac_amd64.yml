@@ -28,7 +28,7 @@ jobs:
       run: cargo build --target=x86_64-apple-darwin --release
 
     - name: Create archive
-      run: tar -cjf PKT-Voter_mac_amd64.tar.bz2 ./target/x86_64-apple-darwin/release ./PKT-Voter
+      run: tar -cjf PKT-Voter_mac_amd64.tar.bz2 -C ./target/x86_64-apple-darwin/release PKT-Voter
 
     - name: Archive built artifacts
       uses: actions/upload-artifact@v4

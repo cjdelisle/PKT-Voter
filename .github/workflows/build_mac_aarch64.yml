@@ -30,7 +30,7 @@ jobs:
       run: cargo build --release
 
     - name: Create archive
-      run: tar -cjf PKT-Voter_mac_aarch64.tar.bz2 ./target/release ./PKT-Voter
+      run: tar -cjf PKT-Voter_mac_aarch64.tar.bz2 -C ./target/release PKT-Voter
 
     - name: Archive built artifacts
       uses: actions/upload-artifact@v4
