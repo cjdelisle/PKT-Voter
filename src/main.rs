@@ -14,6 +14,7 @@ use bitcoin::psbt::Input;
 use bitcoin::psbt::PsbtSighashType;
 use bitcoin::script::PushBytes;
 use bitcoin::Amount;
+use bitcoin::OutPoint;
 use bitcoin::PubkeyHash;
 use bitcoin::ScriptHash;
 use bitcoin::ScriptBuf;
@@ -34,7 +35,24 @@ mod types;
 
 slint::include_modules!();
 
-
+async fn get_usable_utxo(addr: &str) -> Result<(OutPoint,TxOut)> {
+    let script = script_from_address(addr)?;
+    let txn = explorer::get_transaction(addr).await?;
+    for (n, txout) in txn.output.iter().enumerate() {
+        // TODO: If the user has 2 TXOs in the same txn, one spent one unspent, this will
+        //       possibly select the spent one.
+        if txout.script_pubkey == script {
+            return Ok((
+                OutPoint{
+                    txid: txn.txid(),
+                    vout: n as u32,
+                },
+                txout.clone(),
+            ))
+        }
+    }
+    bail!("No usable txout found in selected transaction: {}", txn.txid());
+}
 
 fn amount_pkt(amt: &Amount) -> f64 {
     amt.to_sat() as f64 / 1073741824.0
@@ -178,8 +196,7 @@ struct AddrInfo {
 #[derive(Default)]
 struct AppMut {
     addr_info: Option<AddrInfo>,
-    spend_op: Option<bitcoin::OutPoint>,
-    input_val: u64,
+    spend_txout: Option<(bitcoin::OutPoint,TxOut)>,
     is_candidate: bool,
     vote_for: Option<ScriptBuf>,
     staged_txn: Option<psbt::Psbt>,
@@ -228,7 +245,7 @@ impl App {
     }
     async fn update_address_info(self: Arc<Self>, addr: AddrInfo) {
         let bal = explorer::get_balance(&addr.addr_str).await;
-        let txn = explorer::get_transaction(&addr.addr_str).await;
+        let txn = get_usable_utxo(&addr.addr_str).await;
         self.m.lock().unwrap().addr_info = Some(addr);
         let ui = self.ui.clone();
         if let Err(e) = ui.upgrade_in_event_loop(move |ui| {
@@ -237,10 +254,9 @@ impl App {
                     ui.set_balance(format!("Balance: {balance}").into());
                     if balance > 0.0 {
                         match txn {
-                            Ok((op, val)) => {
+                            Ok(spend_txout) => {
                                 let mut m = self.m.lock().unwrap();
-                                m.spend_op = Some(op);
-                                m.input_val = val;
+                                m.spend_txout = Some(spend_txout);
                                 ui.set_vote_ok(true);
                                 ui.set_message("Please specify an address to vote for.".into());
                             }
@@ -262,7 +278,7 @@ impl App {
     }
     fn make_vote(self: &Arc<Self>) -> Result<psbt::Psbt> {
         let m = self.m.lock().unwrap();
-        let Some(so) = m.spend_op else {
+        let Some((op, txout)) = &m.spend_txout else {
             bail!("No outpoint, the app is in a wrong state");
         };
         let Some(ai) = &m.addr_info else {
@@ -270,14 +286,13 @@ impl App {
         };
         let vote_for = &m.vote_for;
         let is_candidate = m.is_candidate;
-        let value = Amount::from_sat(m.input_val);
 
         // Decide fee
         // We don't have a good way to choose a fee so we're going to pick 500 units
         // because that's over-paying by about double.
         let fee = Amount::from_sat(500);
 
-        if value < fee {
+        if txout.value < fee {
             bail!("Unable to make transaction because input is not enough to pay fee");
         }
 
@@ -286,12 +301,12 @@ impl App {
             version: bitcoin::transaction::Version::TWO,
             lock_time: bitcoin::absolute::LockTime::ZERO,
             input: vec![TxIn{
-                previous_output: so,
+                previous_output: op.clone(),
                 ..Default::default()
             }],
             output: vec![
                 TxOut{
-                    value: value - fee,
+                    value: txout.value - fee,
                     script_pubkey: ai.change_script.script_pubkey(),
                 },
                 mk_vote_output(vote_for.clone(), is_candidate),
@@ -301,10 +316,7 @@ impl App {
 
         // update pbst
         tx.inputs = vec![Input {
-            witness_utxo: Some(TxOut{
-                value,
-                script_pubkey: ai.change_script.script_pubkey(),
-            }),
+            witness_utxo: Some(txout.clone()),
             redeem_script: Some({
                 let Some(wpkh) = ai.public_key.wpubkey_hash() else {
                     bail!("public_key.wpubkey_hash() did not work correctly");

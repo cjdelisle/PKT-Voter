@@ -1,8 +1,6 @@
 use std::str::FromStr;
 
-use bitcoin::consensus::encode;
-use bitcoin::OutPoint;
-use bitcoin::Txid;
+use bitcoin::consensus;
 use anyhow::{bail,Result};
 use serde::{Serialize,Deserialize};
 
@@ -54,7 +52,18 @@ struct PagedData<T> {
     pub next: String,
 }
 
-pub async fn get_transaction(addr: &str) -> Result<(OutPoint,u64)> {
+pub async fn get_transaction_bin(txid: &str) -> Result<bitcoin::Transaction> {
+    let bs = reqwest::get(&format!("https://explorer.cjdns.fr/api/v2/tx/{txid}/bin"))
+        .await?
+        .bytes()
+        .await?;
+    let txn = consensus::deserialize(&bs[..])?;
+    Ok(txn)
+}
+
+pub async fn get_transaction(addr: &str) -> Result<bitcoin::Transaction> {
+    // This will not spend mined coins, which makes life easier because we don't have to care
+    // if they are not yet mature.
     let mut url = format!("https://explorer.pkt.cash/api/v1/PKT/pkt/address/{addr}/coins");
     loop {
         println!("Request: {url}");
@@ -64,14 +73,25 @@ pub async fn get_transaction(addr: &str) -> Result<(OutPoint,u64)> {
             .await?;
         let txns: PagedData<Transaction> = serde_json::from_str(&bs)?;
         for txn in txns.results {
-            for (n, out) in txn.output.into_iter().enumerate() {
+            if txn.block_hash.is_empty() {
+                // Skip unconfirmed
+                continue;
+            }
+            for out in txn.output.into_iter() {
                 let value = u64::from_str(&out.value)?;
-                if out.address == addr && out.spentcount == 0 {
-                    return Ok((OutPoint{
-                        txid: Txid::from_str(&txn.txid)?,
-                        vout: n as u32,
-                    }, value));
+                if out.address != addr {
+                    // Paying someone else
+                    continue;
                 }
+                if out.spentcount != 0 {
+                    // Already spent
+                    continue;
+                }
+                if value < 500 {
+                    // Unable to pay the fee
+                    continue;
+                }
+                return get_transaction_bin(&txn.txid).await;
             }
         }
         url = txns.next;
@@ -101,7 +121,7 @@ pub async fn get_balance(addr: &str) -> Result<f64> {
 
 pub async fn bcast_transaction(txn: &bitcoin::Transaction) -> Result<()> {
     let real_txid = txn.txid().to_string();
-    let txn_bytes = encode::serialize(txn);
+    let txn_bytes = consensus::encode::serialize(txn);
     let bs = reqwest::Client::new()
         .post("https://explorer.cjdns.fr/api/v2/tx/bcast-bin")
         .body(reqwest::Body::from(txn_bytes))
@@ -109,7 +129,12 @@ pub async fn bcast_transaction(txn: &bitcoin::Transaction) -> Result<()> {
         .await?
         .text()
         .await?;
-    let txid: String = serde_json::from_str(&bs)?;
+    let txid: String = match serde_json::from_str(&bs) {
+        Ok(s) => s,
+        Err(e) => {
+            bail!("Error sending transaction: {e}");
+        }
+    };
     if txid != real_txid {
         bail!("Got back txid {txid} but was expecting {real_txid}");
     }
