@@ -1,3 +1,4 @@
+#![windows_subsystem = "windows"]
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -366,9 +367,6 @@ impl App {
         });
     }
 }
-
-// cRTC8i8KwACJRAHh3BxmTnRcsy3FHZngNQv2ACYVcx6EBmBUptNi
-// pkt1qsjwa38q0xm772689jav4k327j4rwcrg9aftu9t
 
 fn main() -> Result<()> {
     let ui = SlintApp::new()?;
